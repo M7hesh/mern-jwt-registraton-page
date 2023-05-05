@@ -10,8 +10,6 @@ const auth = require("./middleware/auth");
 const db = require("./db.config");
 
 const app = express();
-// create table if not exist
-db.sequelize.sync();
 
 app.use(cors({ origin: "http://localhost:3000", credentials: true })); // try w/o using it
 // app.use(cors({

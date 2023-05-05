@@ -3,12 +3,11 @@ const { DataTypes } = require("sequelize");
 module.exports = (sequelize, Sequelize) => {
   // Define the user_info model
   const userInfo = sequelize.define(
-    "user_info",
+    "users",
     {
       id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         primaryKey: true,
-        autoIncrement: true,
       },
       first_name: {
         type: DataTypes.STRING,
