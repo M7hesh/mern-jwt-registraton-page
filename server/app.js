@@ -7,10 +7,20 @@ const cookieParser = require("cookie-parser");
 const { verify } = require("jsonwebtoken");
 const { hash, compare } = require("bcryptjs");
 const auth = require("./middleware/auth");
+const db = require("./db.config");
 
 const app = express();
+// create table if not exist
+db.sequelize.sync();
 
 app.use(cors({ origin: "http://localhost:3000", credentials: true })); // try w/o using it
+// app.use(cors({
+//   origin: "*", // all origins
+//   methods: "*", // all http methods
+//   allowedHeaders: "*" // all headers in HTTP request
+// }));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 app.use(express.json());
 app.use(cookieParser());
 
