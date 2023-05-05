@@ -27,22 +27,22 @@ module.exports = (sequelize, Sequelize) => {
       },
       profile_picture: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
-      created_date: {
-        type: DataTypes.DATE,
-        //   allowNull: false,
-        defaultValue: Sequelize.NOW,
-      },
+      // created_date: {
+      //   type: DataTypes.DATE,
+      //   //   allowNull: false,
+      //   defaultValue: Sequelize.NOW,
+      // },
       created_by: {
         type: DataTypes.STRING,
         //   allowNull: false,
       },
-      updated_date: {
-        type: DataTypes.DATE,
-        //   allowNull: false,
-        defaultValue: Sequelize.NOW,
-      },
+      // updated_date: {
+      //   type: DataTypes.DATE,
+      //   //   allowNull: false,
+      //   defaultValue: null,
+      // },
       updated_by: {
         type: DataTypes.STRING,
         //   allowNull: false,
