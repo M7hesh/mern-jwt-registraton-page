@@ -22,7 +22,7 @@ const auth = (req, res, next) => {
   next();
 };
 
-// alternate way - if refresh token is used
+// alternate way of Auth
 const isAuth = (req, res, next) => {
   const authoriszation = req.headers["authorization"];
   console.log("authoriszation", authoriszation);
@@ -30,9 +30,7 @@ const isAuth = (req, res, next) => {
   if (!authoriszation) {
     res.status(403).send({ message: "User not logged in" });
   }
-  const token = authoriszation;
-  // const token = authHeader.split(' ')[1];
-
+  const token = authoriszation.split(" ")[1];
   const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
   req.user = decodedToken;
   next();

@@ -143,6 +143,7 @@ app.post("/login", async (req, res) => {
     // //if wrong wrong password - 401 Unauthorized
     if (!isPasswordCorrect) {
       res.status(401).send({ message: `Password Incorrect` });
+      return;
     }
     const payload = { id: userPayload?.[0][0]?.id };
     // if password matches -> send token
@@ -158,7 +159,7 @@ app.post("/login", async (req, res) => {
       const options = {
         expires: new Date(Date.now() + 1 * 24 * 60 * 1000), // expires in 1 day
         httpOnly: true, // cookie can be manipulated in the server only, user will not be able to manipulate it in the browser
-        path: "/refresh",
+        path: "/refresh_token",
       };
       res
         .status(200)
@@ -173,7 +174,6 @@ app.post("/login", async (req, res) => {
           payload, // if needed})
         });
     }
-    // res.status(200).send("eg");
   } catch (error) {
     res
       .status(500)
@@ -181,61 +181,133 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// app.get("/profile", async (req, res) => {
-//   // only authorised user will be able to access it
-//   // query db with id, Welcome user
-//   console.log("req.user");
-//   res.status(201).send("hs");
-// });
+app.put("/profile", async (req, res) => {
+  try {
+    const { id, firstName, lastName, mobileNumber, profilePicture } = req.body;
+
+    // validation 422
+
+    const date = new Date().toISOString().slice(0, 19).replace("T", " "); // convert the date to a string in ISO format, then remove the time and replace the 'T' with a space
+    console.log("--------utc date----------", date);
+
+    const resp = await db.sequelize.query(`UPDATE users
+            SET
+                first_name      = '${firstName}',
+                last_name       = '${lastName}',
+                mobile_number   = '${mobileNumber}',
+                profile_picture = '${profilePicture}',
+                updated_by      = '${id}',
+                updatedAt       = '${date}'
+            WHERE
+                id = '${id}'
+    `);
+    console.log("--------resp----------", resp[0].affectedRows);
+
+    if (!resp || !resp[0]?.affectedRows) {
+      throw new Error();
+    }
+
+    res.status(201).json(resp);
+    //image pending
+  } catch (error) {
+    res.status(500).send({
+      message: error.message,
+      errorLoggedFrom: "registrationController",
+    });
+  }
+});
 
 // protected route
-app.get("/profile/:id", auth, async (req, res, next) => {
-  // only authorised user will be able to access it
-  // query db with id, Welcome user
-  const { id } = req.params;
-  const userPayload = await db.sequelize.query(
-    `SELECT id, first_name, last_name, mobile_number, profile_picture FROM users WHERE id = '${id}';`
-  );
-  console.log("--------userPayload----------", userPayload);
-  console.log("req.user", req.user);
-  res.status(200).send("hi");
-  next();
+app.get("/profile/:id", isAuth, async (req, res, next) => {
+  try {
+    // only authorised user will be able to access it
+    const { id } = req.params;
+    // query db with id, Welcome user
+    console.log("req.user", req.user.id);
+
+    if (!req.user || req.user?.id !== id) {
+      res.status(401).send("PLease login");
+      return;
+    }
+    const userPayload = await db.sequelize.query(`SELECT 
+          id, 
+          first_name, 
+          last_name, 
+          mobile_number, 
+          profile_picture 
+      FROM users 
+      WHERE id = '${id}';`);
+    console.log("--------userPayload----------", userPayload);
+    res.status(200).send(userPayload[0][0]);
+    next();
+  } catch (error) {
+    res
+      .status(500)
+      .send({ message: error.message, errorLoggedFrom: "profileController" });
+  }
+});
+
+app.post("/refresh_token", (req, res) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.send({ token: "" });
+  }
+  let payload = null;
+  try {
+    payload = jwt.verify(token, process.env.TOKEN_SECRET);
+  } catch (error) {
+    return res.send({ token: "" });
+  }
+  console.log("payload from refresh", payload);
+  // if token is vaild, check if user exist
+  // const userPayload = db.sequelize.query(`SELECT id, refresh_token AS refreshToken from users WHERE id = '${payload.id}'`);
+  // if (!userPayload.id) {
+  //   return res.send({ token: "" });
+  // }
+  // take refresh token from Db and compare
+  // if (userPayload.refreshToken !== token) {
+  //   return res.send({ token: "" });
+  // }
+  // token matches - create new tokens
+  // store the new token in db
+  // send refresh tokens in cookies
+  // return res.send({ newtoken})
 });
 
 app.post("/logout", (_, res) => {
-  res.clearCookie("token", { path: "/refresh" });
+  res.clearCookie("token", { path: "/refresh_token" });
   res.send({ message: "User logged out" });
 });
 // in the logout route set the cookies as undefined
 
 // Logout endpoint
-app.post("/logout", async (req, res) => {
-  try {
-    // Get the JWT token from the request headers
-    const token = req.headers.authorization.split(" ")[1];
+// app.post("/logout", async (req, res) => {
+//   try {
+//     // Get the JWT token from the request headers
+//     const token = req.headers.authorization.split(" ")[1];
 
-    // Verify the JWT token
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+//     // Verify the JWT token
+//     let decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
 
-    // Destroy the JWT token and logout the user
-    // Optionally, you can also add the token to a blacklist or revoke list to prevent future usage
-    // This is useful in case the token is compromised or stolen
-    // You can use a database or a cache like Redis to store the revoked tokens
-    // For this example, we'll just destroy the token and logout the user
-    decodedToken = null;
+//     // Destroy the JWT token and logout the user
+//     // Optionally, you can also add the token to a blacklist or revoke list to prevent future usage
+//     // This is useful in case the token is compromised or stolen
+//     // You can use a database or a cache like Redis to store the revoked tokens
+//     // For this example, we'll just destroy the token and logout the user
+//     decodedToken = null;
 
-    // Send a response to the client
-    res.status(200).json({
-      message: "Logout successful",
-    });
-  } catch (error) {
-    // If there's an error, send an error response to the client
-    console.error(error);
-    res.status(401).json({
-      error: "Unauthorized",
-      message: "Invalid or expired token",
-    });
-  }
-});
+//     // Send a response to the client
+//     res.status(200).json({
+//       message: "Logout successful",
+//     });
+//   } catch (error) {
+//     // If there's an error, send an error response to the client
+//     console.error(error);
+//     res.status(401).json({
+//       error: "Unauthorized",
+//       message: "Invalid or expired token",
+//     });
+//   }
+// });
 
 module.exports = app;
