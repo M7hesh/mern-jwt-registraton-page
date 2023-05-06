@@ -8,6 +8,7 @@ const auth = (req, res, next) => {
   try {
     //get token from cookie
     const { token } = req.cookies;
+    console.log("req.cookies", req.cookies);
     // if no token, stop
     if (!token) {
       res.status(403).send({ message: "User not logged in" });
@@ -22,13 +23,19 @@ const auth = (req, res, next) => {
 };
 
 // alternate way - if refresh token is used
-const isAuth = (req) => {
+const isAuth = (req, res, next) => {
   const authoriszation = req.headers["authorization"];
+  console.log("authoriszation", authoriszation);
+  // Authorization: `Bearer ${token}`,
   if (!authoriszation) {
     res.status(403).send({ message: "User not logged in" });
   }
+  const token = authoriszation;
+  // const token = authHeader.split(' ')[1];
+
   const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET);
   req.user = decodedToken;
+  next();
 };
 
-module.exports = auth;
+module.exports = { auth, isAuth };
