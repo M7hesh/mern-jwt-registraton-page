@@ -320,7 +320,8 @@ app.post("/refresh_token", async (req, res) => {
   }
 });
 
-app.post("/logout", (_, res) => {
+app.post("/logout", (req, res) => {
+  console.log(req.user);
   res.clearCookie("refreshToken", { path: "/refresh_token" });
   res.send({ message: "User logged out" });
 });
