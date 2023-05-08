@@ -29,6 +29,9 @@ module.exports = (sequelize, Sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      refresh_token: {
+        type: DataTypes.STRING,
+      },
       // created_date: {
       //   type: DataTypes.DATE,
       //   //   allowNull: false,
