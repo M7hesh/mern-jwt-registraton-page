@@ -1,68 +1,67 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Login = () => {
   const [formData, setFormData] = useState({
     mobileNumber: "",
     password: "",
   });
-  const [isPhoneValid, setIsPhoneValid] = useState(false);
+  const [isMobileNumberValid, setIsMobileNumberValid] = useState(false);
 
   const navigate = useNavigate();
   const { mobileNumber, password } = formData;
 
-  const handlePhoneNumberValidation = (e) => {
-    e.preventDefault();
-    const phoneNoRegex = /^\d{10}$/;
-    if (!e.target.value.match(phoneNoRegex) && e.target.value) {
+  const handleMobileNumberValidation = () => {
+    const mobileNoRegex = /^\d{10}$/;
+    if (mobileNumber && !mobileNumber.match(mobileNoRegex)) {
       document.getElementById(
-        `mobileNumberError`
-      ).innerHTML = `Invalid Phone number!`;
-      setIsPhoneValid(false);
+        `mobileNumber-error`
+      ).innerHTML = `Invalid Mobile number!`;
+      setIsMobileNumberValid(false);
     } else {
-      setIsPhoneValid(true);
-      document.getElementById(`mobileNumberError`).innerHTML = "";
+      setIsMobileNumberValid(true);
+      document.getElementById(`mobileNumber-error`).innerHTML = "";
     }
   };
 
   const handleChange = (event) => {
     event.preventDefault();
-    const { name, value, placeholder } = event.target;
-    if (name === "mobileNumber") {
-      console.log(value.length);
-      handlePhoneNumberValidation(event);
-    }
+    const { name, value } = event.target;
     setFormData((prevState) => {
       return { ...prevState, [name]: value };
     });
-
-    // validation
-    // if (value === "" || value === null) {
-    //   document.getElementById(
-    //     `${name}Error`
-    //   ).innerHTML = `${placeholder} is a required field`;
-    // } else {
-    //   document.getElementById(`${name}Error`).innerHTML = "";
-    // }
   };
 
-  const handlePaymentProceed = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (!(password && mobileNumber)) {
-      document.getElementById("proceedError").innerHTML =
-        "Please enter the credentials!";
+    handleMobileNumberValidation();
+    if (!(password && mobileNumber) || !isMobileNumberValid) {
+      return;
+    } else {
+      const resp = await axios.post("https://localhost:3001/login", formData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
+      const result = await resp.json();
+      if (result.accessToken) {
+        //add it in context
+        navigate(`/profile/${result.id}`);
+      } else {
+        console.log(result.error);
+      }
     }
-    // else {
-    //   navigate("/profile");
-    // }
   };
 
   return (
-    <main>
-      <label htmlFor="mobileNumber">Mobile number:</label>
+    <form onSubmit={handleLogin}>
+      <h1>Log in</h1>
       <div>
+        <label htmlFor="mobile-number">Mobile number</label>
         <input
-          id="mobileNumber"
+          id="mobile-number"
           name="mobileNumber"
           type="text"
           placeholder="Mobile number"
@@ -72,11 +71,11 @@ const Login = () => {
           required
         />
         <span>*</span>
-        <p id="mobileNumberError"></p>
+        <p id="mobileNumber-error"></p>
       </div>
 
-      <label htmlFor="password">Password:</label>
       <div>
+        <label htmlFor="password">Password</label>
         <input
           id="password"
           name="password"
@@ -89,19 +88,13 @@ const Login = () => {
         <span>*</span>
       </div>
 
-      <div>
-        {"  "}
-        <p id="proceedError"></p>
-      </div>
-
-      <button id="btn2" type="button" onClickS={handlePaymentProceed}>
-        Log in
-      </button>
+      <button type="submit">Log in</button>
       {/* forgot password */}
       <p className="register">
-        Not a member? <a href="/register">Register here!</a>
+        Not a member? &nbsp;
+        <a href="/register">Register here!</a>
       </p>
-    </main>
+    </form>
   );
 };
 
