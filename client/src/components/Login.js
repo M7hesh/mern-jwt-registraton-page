@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { UserContext } from "../App";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -8,9 +9,13 @@ const Login = () => {
     password: "",
   });
   const [isMobileNumberValid, setIsMobileNumberValid] = useState(false);
-
+  const [user, setUser] = useContext(UserContext);
   const navigate = useNavigate();
   const { mobileNumber, password } = formData;
+
+  useEffect(() => {
+    console.log("login user changed", user);
+  }, [user]);
 
   const handleMobileNumberValidation = () => {
     const mobileNoRegex = /^\d{10}$/;
@@ -46,8 +51,10 @@ const Login = () => {
         withCredentials: true,
       });
       const result = await resp.json();
+      console.log("login: result", result);
       if (result.accessToken) {
         //add it in context
+        setUser({ accessToken: result.accessToken });
         navigate(`/profile/${result.id}`);
       } else {
         console.log(result.error);
